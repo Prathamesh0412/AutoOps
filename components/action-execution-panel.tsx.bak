@@ -245,9 +245,9 @@ export function ActionExecutionPanel() {
                 </>
               )}
             </TabsContent>
-          )
+          )}
         </Tabs>
-          )}</CardContent>
+      </CardContent>
     </Card>
 
     <ConfirmationDialog
@@ -263,6 +263,6 @@ export function ActionExecutionPanel() {
         onConfirm={executeActionHandler}
         isLoading={isLoading}
       />
-  </div>
+    </div>
   )
 }

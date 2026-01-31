@@ -123,3 +123,75 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Card styles */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-accent hover:text-accent-foreground transition-colors;
+  }
+  
+  /* Status badges */
+  .status-high {
+    @apply bg-red-500/10 text-red-500 border-red-500/20;
+  }
+  
+  .status-medium {
+    @apply bg-amber-500/10 text-amber-500 border-amber-500/20;
+  }
+  
+  .status-low {
+    @apply bg-blue-500/10 text-blue-500 border-blue-500/20;
+  }
+  
+  .status-success {
+    @apply bg-green-500/10 text-green-500 border-green-500/20;
+  }
+  
+  .status-pending {
+    @apply bg-amber-500/10 text-amber-500 border-amber-500/20;
+  }
+  
+  /* Navigation */
+  .nav-item {
+    @apply flex items-center gap-2 text-sm font-medium transition-colors hover:text-foreground px-3 py-2 rounded-md;
+  }
+  
+  .nav-item-active {
+    @apply text-foreground bg-accent/50;
+  }
+  
+  .nav-item-inactive {
+    @apply text-muted-foreground;
+  }
+  
+  /* Loading skeleton */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-muted;
+  }
+  
+  /* Progress indicators */
+  .progress-bar {
+    @apply h-2 bg-muted rounded-full overflow-hidden;
+  }
+  
+  .progress-fill {
+    @apply h-full bg-primary rounded-full transition-all duration-500 ease-out;
+  }
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { Navigation } from "@/components/navigation"
-import { DashboardOverview } from "@/components/dashboard-overview"
+import { IntelligentDashboard } from "@/components/intelligent-dashboard"
 import { DataAnalysisPanel } from "@/components/data-analysis-panel"
 import { PredictionsPanel } from "@/components/predictions-panel"
 import { ActionsPanel } from "@/components/actions-panel"
@@ -24,7 +24,7 @@ export default function DashboardPage() {
               </p>
             </div>
             
-            <DashboardOverview />
+            <IntelligentDashboard />
             
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
               <DataAnalysisPanel />

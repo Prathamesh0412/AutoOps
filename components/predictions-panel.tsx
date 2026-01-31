@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock, Target } from "lucide-react"
+import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock, Target, AlertCircle } from "lucide-react"
 import { useEffect, useState } from "react"
-import { usePredictions, useAppStore } from "@/lib/store"
+import { useDataStore } from "@/lib/core/data-store"
 import type { Prediction } from "@/lib/store"
 import Link from "next/link"
 
@@ -26,8 +26,7 @@ const severityColors = {
 }
 
 export function PredictionsPanel() {
-  const predictions = usePredictions()
-  const { generatePrediction, updatePredictionSeverity } = useAppStore()
+  const { insights, generateInsights } = useDataStore()
   const [filter, setFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -36,40 +35,36 @@ export function PredictionsPanel() {
     setMounted(true)
   }, [])
 
-  // Filter predictions based on severity
-  const filteredPredictions = predictions.filter(prediction => 
-    filter === 'All' || prediction.severity === filter
-  ).slice(0, 6)
+  // Filter insights based on severity (using confidence as proxy for severity)
+  const filteredInsights = insights.filter(insight => {
+    const confidence = insight.confidence
+    let severity: 'High' | 'Medium' | 'Low'
+    if (confidence >= 80) severity = 'High'
+    else if (confidence >= 60) severity = 'Medium'
+    else severity = 'Low'
+    
+    return filter === 'All' || severity === filter
+  }).slice(0, 6)
 
   // Calculate confidence score programmatically
-  const calculateConfidence = (prediction: Prediction): number => {
-    // Simulate AI confidence calculation based on various factors
-    let baseConfidence = prediction.confidence
+  const calculateConfidence = (insight: any): number => {
+    // Apply decay factor to confidence over time
+    const ageInHours = (Date.now() - new Date(insight.created_at).getTime()) / (1000 * 60 * 60)
+    const ageDecay = Math.max(0.7, 1 - (ageInHours / 168)) // Decay over a week
     
-    // Adjust based on data age (newer predictions are more confident)
-    const ageInHours = (Date.now() - new Date(prediction.created_at).getTime()) / (1000 * 60 * 60)
-    const ageFactor = Math.max(0.7, 1 - (ageInHours / 168)) // Decay over a week
-    
-    // Adjust based on severity
-    const severityFactor = prediction.severity === 'High' ? 1.1 : prediction.severity === 'Medium' ? 1.0 : 0.9
-    
-    return Math.min(99, Math.round(baseConfidence * ageFactor * severityFactor))
-  }
-
-  const handleSeverityChange = (id: string, severity: 'High' | 'Medium' | 'Low') => {
-    updatePredictionSeverity(id, severity)
+    return Math.min(99, Math.round(insight.confidence * ageDecay * insight.decay_factor))
   }
 
   const toggleExpanded = (id: string) => {
     setExpandedId(expandedId === id ? null : id)
   }
 
-  const generateNewPrediction = () => {
-    generatePrediction()
+  const generateNewInsight = () => {
+    generateInsights()
   }
 
-  const avgConfidence = predictions.length > 0
-    ? Math.round(predictions.reduce((sum, p) => sum + calculateConfidence(p), 0) / predictions.length)
+  const avgConfidence = insights.length > 0
+    ? Math.round(insights.reduce((sum, insight) => sum + calculateConfidence(insight), 0) / insights.length)
     : 0
 
   return (
@@ -87,7 +82,7 @@ export function PredictionsPanel() {
           </div>
           <Badge variant="outline" className="bg-primary/5">
             <AlertTriangle className="mr-1 size-3" />
-            {predictions.length} Active
+            {insights.length} Active
           </Badge>
         </div>
       </CardHeader>
@@ -96,42 +91,55 @@ export function PredictionsPanel() {
           <div className="py-8 text-center text-sm text-muted-foreground">
             Analyzing data...
           </div>
-        ) : filteredPredictions.length === 0 ? (
+        ) : filteredInsights.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             No active predictions. System is monitoring data.
           </div>
         ) : (
           <div className="space-y-4">
             {/* Filter controls */}
-            <div className="flex items-center justify-between">
-              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button size="sm" onClick={generateNewPrediction}>
+            <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Filter by severity:</span>
+                <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All ({insights.length})</SelectItem>
+                    <SelectItem value="High">High ({insights.filter(i => i.confidence >= 80).length})</SelectItem>
+                    <SelectItem value="Medium">Medium ({insights.filter(i => i.confidence >= 60 && i.confidence < 80).length})</SelectItem>
+                    <SelectItem value="Low">Low ({insights.filter(i => i.confidence < 60).length})</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={generateNewInsight}
+                className="btn-primary"
+              >
+                <Zap className="mr-1 size-3" />
                 Generate New
               </Button>
             </div>
 
-            {/* Predictions list */}
-            {filteredPredictions.map((prediction) => {
-              const Icon = iconMap[prediction.prediction_type] || Zap
-              const calculatedConfidence = calculateConfidence(prediction)
-              const isExpanded = expandedId === prediction.id
+            {/* Insights list */}
+            {filteredInsights.map((insight) => {
+              const Icon = iconMap[insight.type] || Zap
+              const calculatedConfidence = calculateConfidence(insight)
+              const isExpanded = expandedId === insight.id
               
               return (
                 <div
-                  key={prediction.id}
-                  className={`rounded-lg border p-4 transition-all duration-200 ${severityColors[prediction.severity as keyof typeof severityColors]} ${
-                    isExpanded ? 'ring-2 ring-primary/20' : ''
+                  key={insight.id}
+                  className={`rounded-lg border p-4 transition-all duration-200 cursor-pointer ${
+                    insight.confidence >= 80 ? severityColors.High : 
+                    insight.confidence >= 60 ? severityColors.Medium : 
+                    severityColors.Low
+                  } ${
+                    isExpanded ? 'ring-2 ring-primary/20 shadow-md' : 'shadow-sm hover:shadow-md'
                   }`}
+                  onClick={() => toggleExpanded(insight.id)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/50">
@@ -140,57 +148,69 @@ export function PredictionsPanel() {
                     <div className="flex-1 space-y-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{prediction.name}</h4>
+                          <h4 className="font-semibold">{insight.title}</h4>
                           <Badge variant="outline" className="text-xs">
                             {calculatedConfidence}% confident
                           </Badge>
-                          <Select 
-                            value={prediction.severity} 
-                            onValueChange={(value: any) => handleSeverityChange(prediction.id, value)}
-                          >
-                            <SelectTrigger className="w-20 h-6 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="High">High</SelectItem>
-                              <SelectItem value="Medium">Medium</SelectItem>
-                              <SelectItem value="Low">Low</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                         <p className="mt-1 text-sm opacity-90">
-                          {prediction.description}
+                          {insight.description}
                         </p>
                       </div>
                       
                       {/* Expandable details */}
-                      {isExpanded && prediction.details && (
-                        <div className="mt-3 p-3 bg-background/50 rounded-lg">
-                          <h5 className="text-sm font-medium mb-2">Why this prediction?</h5>
-                          <p className="text-xs text-muted-foreground">{prediction.details}</p>
-                          <div className="mt-2 text-xs">
-                            <span className="font-medium">Recommendation: </span>
-                            {prediction.recommendation}
+                      <div className={`overflow-hidden transition-all duration-300 ${
+                        isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}>
+                        {insight.reason_breakdown && (
+                          <div className="mt-3 p-3 bg-background/50 rounded-lg animate-fade-in">
+                            <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <AlertTriangle className="size-4" />
+                              Why this insight exists
+                            </h5>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{insight.reason_breakdown.join(', ')}</p>
+                            <div className="mt-3 p-2 bg-muted/50 rounded border-l-2 border-primary/30">
+                              <p className="text-xs font-medium text-primary">Business Impact</p>
+                              <p className="text-xs text-muted-foreground mt-1">${insight.business_impact.toLocaleString()}</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="size-3" />
-                          {new Date(prediction.created_at).toLocaleDateString()}
+                          {new Date(insight.created_at).toLocaleDateString()}
                         </span>
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            onClick={() => toggleExpanded(prediction.id)}
-                            className="gap-1 bg-transparent"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleExpanded(insight.id)
+                            }}
+                            className="gap-1 btn-ghost"
                           >
-                            {isExpanded ? 'Hide' : 'Show'} Details
+                            {isExpanded ? (
+                              <>
+                                <AlertCircle className="size-3" />
+                                Hide Details
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="size-3" />
+                                Show Details
+                              </>
+                            )}
                           </Button>
                           <Link href="/insights">
-                            <Button size="sm" variant="outline" className="gap-1 bg-transparent">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="gap-1 btn-ghost"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               View Details
                               <ChevronRight className="size-3" />
                             </Button>

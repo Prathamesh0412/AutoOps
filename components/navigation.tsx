@@ -22,17 +22,20 @@ import {
   Zap, 
   MoreVertical,
   Search,
-  X
+  X,
+  Package
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useActions, usePredictions, useWorkflows, useMetrics } from "@/lib/store"
 import { NoSSR } from "@/components/no-ssr"
+import { LoadingState } from "@/components/ui/loading-state"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: Activity },
   { name: "Actions", href: "/actions", icon: Target },
   { name: "Insights", href: "/insights", icon: BarChart3 },
+  { name: "Products", href: "/products", icon: Package },
   { name: "Workflows", href: "/workflows", icon: Settings },
 ]
 
@@ -91,27 +94,31 @@ export function Navigation() {
               <span className="text-xl font-bold">AutoOps AI</span>
             </Link>
             
-            <div className="hidden md:flex items-center gap-6">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href && item.name !== "Home"
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-foreground ${
-                      isActive ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    <item.icon className="size-4" />
-                    {item.name}
-                  </Link>
-                )
-              })}
+            <div className="hidden md:flex items-center gap-2">
+              {!mounted ? (
+                <LoadingState message="" size="sm" className="gap-1" />
+              ) : (
+                navigation.map((item) => {
+                  const isActive = pathname === item.href && item.name !== "Home"
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`nav-item ${
+                        isActive ? "nav-item-active" : "nav-item-inactive"
+                      }`}
+                    >
+                      <item.icon className="size-4" />
+                      {item.name}
+                    </Link>
+                  )
+                })
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="relative btn-ghost">
               <Activity className="size-5" />
               <span className="absolute right-1 top-1 flex size-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
@@ -119,7 +126,7 @@ export function Navigation() {
               </span>
             </Button>
             
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative btn-ghost">
               <Users className="size-5" />
               {mounted && totalNotifications > 0 && (
                 <Badge 
@@ -133,7 +140,7 @@ export function Navigation() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="btn-ghost">
                   <MoreVertical className="size-5" />
                 </Button>
               </DropdownMenuTrigger>
