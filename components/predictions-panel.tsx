@@ -3,63 +3,73 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock, Target } from "lucide-react"
 import { useEffect, useState } from "react"
-import type { Prediction } from "@/lib/supabase"
+import { usePredictions, useAppStore } from "@/lib/store"
+import type { Prediction } from "@/lib/store"
 import Link from "next/link"
 
 const iconMap: Record<string, any> = {
-  customer_churn: TrendingDown,
+  churn_risk: TrendingDown,
   inventory_shortage: Package,
-  high_value_lead: Users,
+  lead_insight: Users,
   payment_delay: DollarSign,
-  pricing_opportunity: TrendingDown,
+  pricing_opportunity: Target,
   customer_satisfaction: Users,
 }
 
 const severityColors = {
-  critical: "text-destructive bg-destructive/10 border-destructive/20",
-  high: "text-destructive bg-destructive/10 border-destructive/20",
-  medium: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  low: "text-accent bg-accent/10 border-accent/20",
+  High: "text-red-500 bg-red-500/10 border-red-500/20",
+  Medium: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+  Low: "text-blue-500 bg-blue-500/10 border-blue-500/20",
 }
 
 export function PredictionsPanel() {
-  const [predictions, setPredictions] = useState<Prediction[]>([])
-  const [loading, setLoading] = useState(true)
+  const predictions = usePredictions()
+  const { generatePrediction, updatePredictionSeverity } = useAppStore()
+  const [filter, setFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    async function fetchPredictions() {
-      try {
-        const response = await fetch('/api/predictions?status=active')
-        if (!response.ok) {
-          console.error('[v0] API error:', response.status)
-          setPredictions([])
-          return
-        }
-        const data = await response.json()
-        console.log('[v0] Predictions received:', data)
-        if (Array.isArray(data)) {
-          setPredictions(data.slice(0, 3)) // Show top 3
-        } else {
-          console.error('[v0] Predictions is not an array:', data)
-          setPredictions([])
-        }
-      } catch (error) {
-        console.error('[v0] Error fetching predictions:', error)
-        setPredictions([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPredictions()
-    const interval = setInterval(fetchPredictions, 15000)
-    return () => clearInterval(interval)
+    setMounted(true)
   }, [])
 
+  // Filter predictions based on severity
+  const filteredPredictions = predictions.filter(prediction => 
+    filter === 'All' || prediction.severity === filter
+  ).slice(0, 6)
+
+  // Calculate confidence score programmatically
+  const calculateConfidence = (prediction: Prediction): number => {
+    // Simulate AI confidence calculation based on various factors
+    let baseConfidence = prediction.confidence
+    
+    // Adjust based on data age (newer predictions are more confident)
+    const ageInHours = (Date.now() - new Date(prediction.created_at).getTime()) / (1000 * 60 * 60)
+    const ageFactor = Math.max(0.7, 1 - (ageInHours / 168)) // Decay over a week
+    
+    // Adjust based on severity
+    const severityFactor = prediction.severity === 'High' ? 1.1 : prediction.severity === 'Medium' ? 1.0 : 0.9
+    
+    return Math.min(99, Math.round(baseConfidence * ageFactor * severityFactor))
+  }
+
+  const handleSeverityChange = (id: string, severity: 'High' | 'Medium' | 'Low') => {
+    updatePredictionSeverity(id, severity)
+  }
+
+  const toggleExpanded = (id: string) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
+
+  const generateNewPrediction = () => {
+    generatePrediction()
+  }
+
   const avgConfidence = predictions.length > 0
-    ? Math.round(predictions.reduce((sum, p) => sum + p.confidence_score, 0) / predictions.length)
+    ? Math.round(predictions.reduce((sum, p) => sum + calculateConfidence(p), 0) / predictions.length)
     : 0
 
   return (
@@ -82,22 +92,46 @@ export function PredictionsPanel() {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {!mounted ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             Analyzing data...
           </div>
-        ) : predictions.length === 0 ? (
+        ) : filteredPredictions.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             No active predictions. System is monitoring data.
           </div>
         ) : (
           <div className="space-y-4">
-            {predictions.map((prediction) => {
-              const Icon = iconMap[prediction.type] || Zap
+            {/* Filter controls */}
+            <div className="flex items-center justify-between">
+              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={generateNewPrediction}>
+                Generate New
+              </Button>
+            </div>
+
+            {/* Predictions list */}
+            {filteredPredictions.map((prediction) => {
+              const Icon = iconMap[prediction.prediction_type] || Zap
+              const calculatedConfidence = calculateConfidence(prediction)
+              const isExpanded = expandedId === prediction.id
+              
               return (
                 <div
                   key={prediction.id}
-                  className={`rounded-lg border p-4 ${severityColors[prediction.severity as keyof typeof severityColors]}`}
+                  className={`rounded-lg border p-4 transition-all duration-200 ${severityColors[prediction.severity as keyof typeof severityColors]} ${
+                    isExpanded ? 'ring-2 ring-primary/20' : ''
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/50">
@@ -106,26 +140,62 @@ export function PredictionsPanel() {
                     <div className="flex-1 space-y-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{prediction.title}</h4>
+                          <h4 className="font-semibold">{prediction.name}</h4>
                           <Badge variant="outline" className="text-xs">
-                            {prediction.confidence_score}% confident
+                            {calculatedConfidence}% confident
                           </Badge>
+                          <Select 
+                            value={prediction.severity} 
+                            onValueChange={(value: any) => handleSeverityChange(prediction.id, value)}
+                          >
+                            <SelectTrigger className="w-20 h-6 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="High">High</SelectItem>
+                              <SelectItem value="Medium">Medium</SelectItem>
+                              <SelectItem value="Low">Low</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <p className="mt-1 text-sm opacity-90">
                           {prediction.description}
                         </p>
                       </div>
+                      
+                      {/* Expandable details */}
+                      {isExpanded && prediction.details && (
+                        <div className="mt-3 p-3 bg-background/50 rounded-lg">
+                          <h5 className="text-sm font-medium mb-2">Why this prediction?</h5>
+                          <p className="text-xs text-muted-foreground">{prediction.details}</p>
+                          <div className="mt-2 text-xs">
+                            <span className="font-medium">Recommendation: </span>
+                            {prediction.recommendation}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="size-3" />
                           {new Date(prediction.created_at).toLocaleDateString()}
                         </span>
-                        <Link href="/insights">
-                          <Button size="sm" variant="outline" className="gap-1 bg-transparent">
-                            View Details
-                            <ChevronRight className="size-3" />
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => toggleExpanded(prediction.id)}
+                            className="gap-1 bg-transparent"
+                          >
+                            {isExpanded ? 'Hide' : 'Show'} Details
                           </Button>
-                        </Link>
+                          <Link href="/insights">
+                            <Button size="sm" variant="outline" className="gap-1 bg-transparent">
+                              View Details
+                              <ChevronRight className="size-3" />
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>

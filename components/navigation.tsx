@@ -20,9 +20,12 @@ import {
   Settings, 
   Users, 
   Zap, 
-  MoreVertical 
+  MoreVertical,
+  Search,
+  X
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useActions, usePredictions, useWorkflows, useMetrics } from "@/lib/store"
 import { NoSSR } from "@/components/no-ssr"
 
 const navigation = [
@@ -35,13 +38,23 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname()
-  const [notifications, setNotifications] = useState(0)
   const [mounted, setMounted] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Get live data for notifications
+  const actions = useActions()
+  const predictions = usePredictions()
+  const workflows = useWorkflows()
+  const metrics = useMetrics()
 
   useEffect(() => {
     setMounted(true)
-    setNotifications(3)
   }, [])
+
+  // Calculate notifications based on real data
+  const pendingActions = actions.filter(a => a.status === 'pending').length
+  const highSeverityPredictions = predictions.filter(p => p.severity === 'High').length
+  const totalNotifications = pendingActions + highSeverityPredictions
 
   return (
     <NoSSR fallback={
@@ -108,12 +121,12 @@ export function Navigation() {
             
             <Button variant="ghost" size="icon" className="relative">
               <Users className="size-5" />
-              {mounted && notifications > 0 && (
+              {mounted && totalNotifications > 0 && (
                 <Badge 
                   variant="destructive" 
-                  className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full p-0 text-xs"
+                  className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full p-0 text-xs animate-pulse"
                 >
-                  {notifications}
+                  {totalNotifications}
                 </Badge>
               )}
             </Button>
