@@ -15,6 +15,7 @@ const iconMap: Record<string, any> = {
   report_generation: FileText,
   email_campaign: Mail,
   pricing_adjustment: TrendingUp,
+  customer_email: Mail,
 }
 
 export function ActionsPanel() {
@@ -77,7 +78,7 @@ export function ActionsPanel() {
       const response = await fetch('/api/actions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'executed' }),
+        body: JSON.stringify({ id, status: 'completed' }),
       })
 
       if (!response.ok) {
@@ -183,6 +184,14 @@ export function ActionsPanel() {
                           <p className="text-sm text-muted-foreground">
                             {action.description}
                           </p>
+                          {action.action_type === 'customer_email' && action.metadata?.emailDraft && (
+                            <div className="mt-2 rounded-md border border-border/60 bg-muted/50 p-3 text-xs text-muted-foreground">
+                              <p className="font-medium text-foreground">Draft preview</p>
+                              <p className="line-clamp-3 whitespace-pre-wrap">
+                                {action.metadata.emailDraft}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <Badge variant="outline" className="bg-accent/10 text-accent">
                           <CheckCircle2 className="mr-1 size-3" />
@@ -229,6 +238,19 @@ export function ActionsPanel() {
                           <p className="text-sm text-muted-foreground">
                             {action.description}
                           </p>
+                          {action.action_type === 'customer_email' && action.metadata?.emailDraft && (
+                            <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs text-amber-900 dark:text-amber-100">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold">Email preview</span>
+                                <Badge variant="outline" className="bg-transparent text-amber-500">
+                                  {action.metadata.sentiment?.toUpperCase() || 'NEUTRAL'}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 line-clamp-4 whitespace-pre-wrap">
+                                {action.metadata.emailDraft}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-500">
                           <Clock className="mr-1 size-3" />
@@ -246,7 +268,7 @@ export function ActionsPanel() {
                           </Button>
                           <Button size="sm" onClick={() => handleApprove(action.id)}>
                             <Play className="mr-2 size-4" />
-                            Approve & Execute
+                            {action.action_type === 'customer_email' ? 'Approve & Send' : 'Approve & Execute'}
                           </Button>
                         </div>
                       </div>

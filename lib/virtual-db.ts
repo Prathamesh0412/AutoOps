@@ -33,6 +33,7 @@ export interface Action {
   expected_impact: string
   executed_at: string | null
   result: any
+  metadata?: Record<string, any> | null
   created_at: string
 }
 
@@ -161,6 +162,7 @@ class VirtualDatabase {
           expected_impact: 'Reduce churn by 60%',
           executed_at: null,
           result: null,
+          metadata: null,
           created_at: new Date(Date.now() - 900000).toISOString()
         },
         {
@@ -174,6 +176,7 @@ class VirtualDatabase {
           expected_impact: 'Prevent stockout for 2 weeks',
           executed_at: new Date(Date.now() - 1800000).toISOString(),
           result: { order_id: 'PO-12345', quantity: 200 },
+          metadata: null,
           created_at: new Date(Date.now() - 2700000).toISOString()
         },
         {
@@ -187,6 +190,7 @@ class VirtualDatabase {
           expected_impact: 'Increase conversion probability by 40%',
           executed_at: null,
           result: null,
+          metadata: null,
           created_at: new Date(Date.now() - 600000).toISOString()
         }
       ],
@@ -342,6 +346,18 @@ class VirtualDatabase {
       return data.actions[index]
     }
     throw new Error('Action not found')
+  }
+
+  async addAction(action: Omit<Action, 'id' | 'created_at'>): Promise<Action> {
+    const data = this.getData()
+    const newAction: Action = {
+      ...action,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString()
+    }
+    data.actions.unshift(newAction)
+    this.saveData(data)
+    return newAction
   }
 
   async executeAction(id: string): Promise<Action> {
