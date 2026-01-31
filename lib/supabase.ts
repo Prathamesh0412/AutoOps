@@ -35,7 +35,6 @@ export type Action = {
   expected_impact: string
   executed_at: string | null
   result: any
-  metadata?: Record<string, any> | null
   created_at: string
 }
 
@@ -117,15 +116,6 @@ export const db = {
       return result
     } catch (error) {
       console.error('[Supabase] updateAction error:', error)
-      throw error
-    }
-  },
-  addAction: async (action: Omit<Action, 'id' | 'created_at'>) => {
-    try {
-      const result = await virtualDB.addAction(action)
-      return result
-    } catch (error) {
-      console.error('[Supabase] addAction error:', error)
       throw error
     }
   },

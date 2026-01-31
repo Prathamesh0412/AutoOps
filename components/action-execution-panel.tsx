@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import * as Icons from "lucide-react"
 const { 
@@ -20,7 +18,7 @@ const {
   CheckCircle2,
   AlertCircle
 } = Icons
-import { FormEvent, useState } from "react"
+import { useState } from "react"
 
 const pendingActions = [
   {
@@ -71,14 +69,6 @@ const urgencyConfig = {
 }
 
 export function ActionExecutionPanel() {
-  const [formData, setFormData] = useState({
-    customerName: '',
-    customerEmail: '',
-    sentiment: 'positive',
-    feedback: '',
-    source: '',
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedAction, setSelectedAction] = useState(pendingActions[0])
   const [editedContent, setEditedContent] = useState(selectedAction.generatedContent)
 
@@ -87,123 +77,8 @@ export function ActionExecutionPanel() {
     setEditedContent(action.generatedContent)
   }
 
-  const handleGenerateEmail = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!formData.customerName || !formData.customerEmail || !formData.feedback) {
-      alert('Please provide the customer name, email, and feedback.')
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      const response = await fetch('/api/feedback/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(error?.error || 'Failed to generate email draft')
-      }
-
-      setFormData({ customerName: '', customerEmail: '', sentiment: 'positive', feedback: '', source: '' })
-      alert('Draft generated. Review it under Automated Actions before sending.')
-    } catch (error) {
-      console.error('[v0] Error generating email draft:', error)
-      alert(error instanceof Error ? error.message : 'Failed to generate email draft')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="size-5 text-primary" />
-            Customer Feedback Email
-          </CardTitle>
-          <CardDescription>
-            Capture a review and let the Groq-powered assistant draft a response for approval.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleGenerateEmail}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Customer name</Label>
-                <Input
-                  id="customerName"
-                  placeholder="Jane Doe"
-                  value={formData.customerName}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, customerName: event.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customerEmail">Customer email</Label>
-                <Input
-                  id="customerEmail"
-                  type="email"
-                  placeholder="jane@example.com"
-                  value={formData.customerEmail}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, customerEmail: event.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Sentiment</Label>
-                <Select
-                  value={formData.sentiment}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, sentiment: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select sentiment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="positive">Positive</SelectItem>
-                    <SelectItem value="neutral">Neutral</SelectItem>
-                    <SelectItem value="negative">Negative</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="feedback-source">Source / Channel</Label>
-                <Input
-                  id="feedback-source"
-                  placeholder="e.g., App Store review"
-                  value={formData.source || ''}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, source: event.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="feedback">Customer feedback</Label>
-              <Textarea
-                id="feedback"
-                rows={6}
-                placeholder="Paste the exact review or support ticket"
-                value={formData.feedback}
-                onChange={(event) => setFormData((prev) => ({ ...prev, feedback: event.target.value }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Generating draft...' : 'Generate Draft for Approval'}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Drafts appear in Automated Actions and require approval before sending.
-              </p>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

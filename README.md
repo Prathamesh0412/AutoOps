@@ -28,7 +28,6 @@ A fully functional AI-powered platform that automates high-value business workfl
 - View execution history with impact metrics
 - Approve/reject actions with one click
 - Track success rates and outcomes
-- Generate Groq-powered customer email drafts that require approval before sending
 
 ### 🔄 Workflows Page
 - 6 pre-configured automation workflows
@@ -102,18 +101,3 @@ The app is ready to run! All database tables are created and populated with samp
 4. Frontend components fetch real data
 
 Simply preview the app to see it in action!
-
-### Environment Variables
-
-Create a `.env.local` file with your Groq key to enable LLM-authored customer emails:
-
-```
-GROQ_API_KEY=your_groq_api_key
-```
-
-### Customer Feedback Email Workflow
-
-1. Navigate to **Actions → Customer Feedback Email** and submit the customer name, email, review sentiment, and raw feedback.
-2. The server calls Groq's `mixtral-8x7b-32768` model to draft a tailored response.
-3. The draft is saved as a pending `customer_email` action. Review it inside **Automated Actions → Pending**.
-4. Approve the action to mark it executed (and trigger downstream sending once hooked to your ESP).
