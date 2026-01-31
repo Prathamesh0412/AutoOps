@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail, AlertCircle } from "lucide-react"
+import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useActions, useAppStore, useIsProcessing } from "@/lib/store"
 import type { Action } from "@/lib/store"
@@ -16,6 +16,7 @@ const iconMap: Record<string, any> = {
   lead_scoring: Target,
   report_generation: FileText,
   pricing_adjustment: TrendingUp,
+  customer_email: Mail,
 }
 
 export function ActionsPanel() {
