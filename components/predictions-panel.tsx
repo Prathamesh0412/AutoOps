@@ -171,7 +171,7 @@ export function PredictionsPanel() {
                             <p className="text-xs text-muted-foreground leading-relaxed">{insight.reason_breakdown.join(', ')}</p>
                             <div className="mt-3 p-2 bg-muted/50 rounded border-l-2 border-primary/30">
                               <p className="text-xs font-medium text-primary">Business Impact</p>
-                              <p className="text-xs text-muted-foreground mt-1">${insight.business_impact.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground mt-1">₹{insight.business_impact.toLocaleString()}</p>
                             </div>
                           </div>
                         )}

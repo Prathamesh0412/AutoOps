@@ -197,7 +197,7 @@ export function ProductIntelligenceDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${product.metrics.totalRevenue.toLocaleString()}</p>
+                    <p className="font-medium">₹{product.metrics.totalRevenue.toLocaleString()}</p>
                     <div className="flex items-center gap-1 text-xs text-green-600">
                       <TrendingUp className="size-3" />
                       +{Math.round(Math.random() * 20 + 5)}%
@@ -293,7 +293,7 @@ export function ProductIntelligenceDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${product.metrics.totalProfit.toLocaleString()}</p>
+                    <p className="font-medium">₹{product.metrics.totalProfit.toLocaleString()}</p>
                     <div className="flex items-center gap-1 text-xs text-green-600">
                       <TrendingUp className="size-3" />
                       +{Math.round(product.metrics.profitMargin)}%
@@ -338,7 +338,7 @@ export function ProductIntelligenceDashboard() {
                   <p className="text-sm">{rec.description}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-green-600">
-                      +${rec.impact.toLocaleString()} impact
+                      +₹{rec.impact.toLocaleString()} impact
                     </span>
                     <Button 
                       size="sm" 
@@ -354,7 +354,7 @@ export function ProductIntelligenceDashboard() {
                           confidence: 85,
                           expected_impact: rec.impact,
                           trigger_insight_id: `product_insight_${product.id}`,
-                          generated_content: `AI Recommendation: ${rec.title}\n\n${rec.description}\n\nProjected impact: $${rec.impact.toLocaleString()}\nPriority: ${rec.priority}`,
+                          generated_content: `AI Recommendation: ${rec.title}\n\n${rec.description}\n\nProjected impact: ₹${rec.impact.toLocaleString()}\nPriority: ${rec.priority}`,
                           created_at: new Date().toISOString()
                         }
                         executeAction(action.id)

@@ -35,7 +35,9 @@ export function ActionExecutionPanel() {
   } = useDataStore()
   
   const pendingActions = actions.filter(action => action.status === 'pending')
-  const [selectedAction, setSelectedAction] = useState(pendingActions[0] || actions[0])
+  const [selectedAction, setSelectedAction] = useState<Action | undefined>(
+    pendingActions.length > 0 ? pendingActions[0] : actions.length > 0 ? actions[0] : undefined
+  )
   const [editedContent, setEditedContent] = useState(selectedAction?.generated_content || '')
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null)
@@ -44,6 +46,19 @@ export function ActionExecutionPanel() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    // Update selectedAction when actions change
+    if (!selectedAction && pendingActions.length > 0) {
+      setSelectedAction(pendingActions[0])
+      setEditedContent(pendingActions[0].generated_content || '')
+    } else if (selectedAction && !actions.find(a => a.id === selectedAction.id)) {
+      // Current selected action was removed, select a new one
+      const newSelected = pendingActions.length > 0 ? pendingActions[0] : actions.length > 0 ? actions[0] : undefined
+      setSelectedAction(newSelected)
+      setEditedContent(newSelected?.generated_content || '')
+    }
+  }, [actions, pendingActions, selectedAction])
 
   const handleActionSelect = (action: Action) => {
     setSelectedAction(action)
@@ -73,13 +88,13 @@ export function ActionExecutionPanel() {
       if (pendingAction === 'approve' && selectedAction) {
         await executeAction(selectedAction.id, editedContent)
         toast({ 
-          message: `Action "${selectedAction.title}" executed successfully`, 
+          message: `Action "${selectedAction?.title || 'this action'}" executed successfully`, 
           type: "success" 
         })
       } else if (pendingAction === 'reject' && selectedAction) {
         rejectAction(selectedAction.id)
         toast({ 
-          message: `Action "${selectedAction.title}" rejected`, 
+          message: `Action "${selectedAction?.title || 'this action'}" rejected`, 
           type: "info" 
         })
       }
@@ -188,7 +203,7 @@ export function ActionExecutionPanel() {
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">Expected Impact</p>
-                      <p className="mt-1 text-lg font-bold text-accent">${selectedAction.expected_impact.toLocaleString()}</p>
+                      <p className="mt-1 text-lg font-bold text-accent">₹{selectedAction?.expected_impact?.toLocaleString() || 0}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">Status</p>
@@ -256,8 +271,8 @@ export function ActionExecutionPanel() {
         title={pendingAction === 'approve' ? 'Approve & Execute Action' : 'Reject Action'}
         description={
           pendingAction === 'approve'
-            ? `Are you sure you want to execute "${selectedAction.title}"? This action will be processed immediately.`
-            : `Are you sure you want to reject "${selectedAction.title}"? This action will be removed from the pending list.`
+            ? `Are you sure you want to execute "${selectedAction?.title || 'this action'}"? This action will be processed immediately.`
+            : `Are you sure you want to reject "${selectedAction?.title || 'this action'}"? This action will be removed from the pending list.`
         }
         confirmText={pendingAction === 'approve' ? 'Execute' : 'Reject'}
         onConfirm={executeActionHandler}

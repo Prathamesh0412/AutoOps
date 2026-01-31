@@ -89,17 +89,17 @@ INSERT INTO data_sources (name, type, status, records_processed, total_records, 
 ON CONFLICT DO NOTHING;
 
 INSERT INTO predictions (type, title, description, severity, confidence, metric_value, metric_label, potential_impact) VALUES
-  ('churn', 'High Customer Churn Risk Detected', '23 customers showing early signs of disengagement based on reduced activity and support tickets', 'critical', 87.00, '23', 'At-Risk Customers', '$67,500 annual revenue at risk'),
-  ('inventory', 'Stock Shortage Warning', '8 products predicted to run out of stock within 7 days based on current sales velocity', 'high', 82.00, '8', 'Products Low', '$45,000 in potential lost sales'),
-  ('lead', 'High-Value Leads Identified', '12 new leads with strong buying signals and high potential value detected', 'medium', 76.00, '12', 'Qualified Leads', '$180,000 potential pipeline value'),
-  ('payment', 'Payment Delays Predicted', '15 invoices at risk of late payment based on historical customer behavior', 'high', 79.00, '15', 'At-Risk Invoices', '$89,000 in delayed payments'),
+  ('churn', 'High Customer Churn Risk Detected', '23 customers showing early signs of disengagement based on reduced activity and support tickets', 'critical', 87.00, '23', 'At-Risk Customers', '₹67,500 annual revenue at risk'),
+  ('inventory', 'Stock Shortage Warning', '8 products predicted to run out of stock within 7 days based on current sales velocity', 'high', 82.00, '8', 'Products Low', '₹45,000 in potential lost sales'),
+  ('lead', 'High-Value Leads Identified', '12 new leads with strong buying signals and high potential value detected', 'medium', 76.00, '12', 'Qualified Leads', '₹180,000 potential pipeline value'),
+  ('payment', 'Payment Delays Predicted', '15 invoices at risk of late payment based on historical customer behavior', 'high', 79.00, '15', 'At-Risk Invoices', '₹89,000 in delayed payments'),
   ('pricing', 'Pricing Optimization Opportunity', '5 products could benefit from dynamic pricing adjustments', 'medium', 73.00, '5', 'Products', '18% potential revenue increase'),
   ('satisfaction', 'Customer Satisfaction Drop', 'NPS score declining in enterprise segment based on recent survey data', 'high', 84.00, '-12pts', 'NPS Change', 'Risk of losing 8 enterprise accounts')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO actions (prediction_id, title, description, type, status, priority, expected_impact) VALUES
   ((SELECT id FROM predictions WHERE type = 'churn' LIMIT 1), 'Send Personalized Retention Offers', 'Draft customized retention offers for 23 at-risk customers with targeted discounts', 'retention', 'pending', 'critical', 'Retain 60% of at-risk customers'),
-  ((SELECT id FROM predictions WHERE type = 'inventory' LIMIT 1), 'Generate Purchase Orders', 'Auto-generate purchase orders for 8 low-stock products', 'purchase_order', 'pending', 'high', 'Prevent $45K in lost sales'),
+  ((SELECT id FROM predictions WHERE type = 'inventory' LIMIT 1), 'Generate Purchase Orders', 'Auto-generate purchase orders for 8 low-stock products', 'purchase_order', 'pending', 'high', 'Prevent ₹45K in lost sales'),
   ((SELECT id FROM predictions WHERE type = 'lead' LIMIT 1), 'Prioritize Sales Pipeline', 'Update CRM with lead scores and prioritize 12 high-value opportunities', 'lead_priority', 'pending', 'medium', 'Increase conversion by 25%'),
   ((SELECT id FROM predictions WHERE type = 'payment' LIMIT 1), 'Send Payment Reminders', 'Schedule automated payment reminders for 15 at-risk invoices', 'payment_reminder', 'approved', 'high', 'Reduce DSO by 12 days'),
   ((SELECT id FROM predictions WHERE type = 'pricing' LIMIT 1), 'Update Product Pricing', 'Implement dynamic pricing for 5 products based on demand analysis', 'pricing_update', 'pending', 'medium', '18% revenue increase')

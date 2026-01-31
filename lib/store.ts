@@ -98,7 +98,7 @@ const generateMockPredictions = (): Prediction[] => [
     prediction_type: 'churn_risk',
     confidence: 87,
     severity: 'High',
-    impact: 'Potential revenue loss: $240,000/year',
+    impact: 'Potential revenue loss: ₹240,000/year',
     recommendation: 'Immediate outreach with personalized retention offers',
     created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
     details: 'Analysis of login frequency, feature usage, and support tickets indicates high churn risk. Customers have reduced API calls by 60% and haven\'t accessed premium features in 45 days.'
@@ -110,7 +110,7 @@ const generateMockPredictions = (): Prediction[] => [
     prediction_type: 'inventory_shortage',
     confidence: 92,
     severity: 'High',
-    impact: 'Potential sales loss: $85,000',
+    impact: 'Potential sales loss: ₹85,000',
     recommendation: 'Expedite supplier order and consider alternative sourcing',
     created_at: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
     details: 'Current inventory: 45 units. Weekly demand: 35 units. Lead time: 14 days. Seasonal demand increase expected: +20%'
@@ -122,7 +122,7 @@ const generateMockPredictions = (): Prediction[] => [
     prediction_type: 'lead_insight',
     confidence: 78,
     severity: 'Medium',
-    impact: 'Potential revenue: $120,000',
+    impact: 'Potential revenue: ₹120,000',
     recommendation: 'Prioritize sales team follow-up within 24 hours',
     created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
     details: 'Leads have visited pricing page 3+ times, downloaded case studies, and spent >10 minutes on product demos.'
@@ -342,7 +342,7 @@ export const useAppStore = create<AppStore>()(
         prediction_type: ['churn_risk', 'inventory_shortage', 'lead_insight'][Math.floor(Math.random() * 3)] as any,
         confidence: 70 + Math.random() * 25,
         severity: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)] as any,
-        impact: 'Potential impact: $' + Math.floor(Math.random() * 200000 + 50000),
+        impact: 'Potential impact: ₹' + Math.floor(Math.random() * 200000 + 50000),
         recommendation: 'Recommended action based on AI analysis',
         created_at: new Date().toISOString()
       }

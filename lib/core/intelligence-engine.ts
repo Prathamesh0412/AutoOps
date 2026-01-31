@@ -49,11 +49,23 @@ export class IntelligenceEngine {
       .reduce((sum, order) => sum + order.quantity, 0) / 4 // last 4 weeks
     
     const currentStock = product.stock_quantity
+    
+    // Handle edge cases where weeklyDemand is 0 or invalid
+    if (weeklyDemand <= 0 || !isFinite(weeklyDemand)) {
+      return {
+        risk: 0,
+        stockout_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+        demand_gap: 0
+      }
+    }
+    
     const daysOfStock = (currentStock / weeklyDemand) * 7
     const risk = Math.min(100, Math.max(0, (30 - daysOfStock) / 30 * 100))
     
+    // Ensure daysOfStock is a finite number
+    const validDaysOfStock = isFinite(daysOfStock) ? daysOfStock : 365
     const stockoutDate = new Date()
-    stockoutDate.setDate(stockoutDate.getDate() + daysOfStock)
+    stockoutDate.setDate(stockoutDate.getDate() + Math.max(0, validDaysOfStock))
     
     const demandGap = Math.max(0, weeklyDemand - currentStock / 4)
     
@@ -91,7 +103,7 @@ export class IntelligenceEngine {
     const intentBonus = leadData.intent_signals * 1000
     value += intentBonus
     confidence += leadData.intent_signals * 10
-    reasoning.push(`${leadData.intent_signals} intent signals add $${intentBonus.toLocaleString()} to value`)
+    reasoning.push(`${leadData.intent_signals} intent signals add ₹${intentBonus.toLocaleString()} to value`)
 
     // Budget alignment
     if (leadData.budget_range >= leadData.deal_size) {
@@ -136,7 +148,7 @@ export class IntelligenceEngine {
           reason_breakdown: [
             `Engagement score: ${customer.engagement_score}/100`,
             `Purchase frequency dropped by ${Math.round((1 - customerOrders.length / 4 / customer.purchase_frequency) * 100)}%`,
-            `LTV at risk: $${customer.ltv.toLocaleString()}`
+            `LTV at risk: ₹${customer.ltv.toLocaleString()}`
           ],
           trend_data: {
             current: churnRisk,

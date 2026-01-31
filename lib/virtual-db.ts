@@ -141,7 +141,7 @@ class VirtualDatabase {
           type: 'high_value_lead',
           severity: 'low',
           title: 'High Value Lead Identified',
-          description: 'New enterprise lead with estimated $50k+ contract value',
+          description: 'New enterprise lead with estimated ₹50k+ contract value',
           confidence_score: 91,
           metrics: { lead_score: 92, estimated_value: 75000 },
           recommended_action: 'Prioritize for immediate sales outreach',

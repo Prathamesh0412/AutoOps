@@ -38,8 +38,6 @@ const statusConfig = {
 export function DataAnalysisPanel() {
   const { 
     dataSources, 
-    isUploading, 
-    uploadData, 
     simulateRealTimeUpdates 
   } = useDataAnalysisStore()
   const [mounted, setMounted] = useState(false)
@@ -49,12 +47,6 @@ export function DataAnalysisPanel() {
     const cleanup = simulateRealTimeUpdates()
     return cleanup
   }, [])
-
-  const handleUpload = async () => {
-    const types = ['customer_database', 'sales_records', 'email_campaigns'] as const
-    const randomType = types[Math.floor(Math.random() * types.length)]
-    await uploadData(randomType)
-  }
 
   const formatLastSync = (date: string | null) => {
     if (!date) return 'Never'
@@ -71,25 +63,14 @@ export function DataAnalysisPanel() {
   return (
     <Card className="col-span-1">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="size-5 text-primary" />
-              Data Analysis
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Real-time processing of unstructured business data
-            </CardDescription>
-          </div>
-          <Button 
-            size="sm" 
-            onClick={handleUpload} 
-            disabled={isUploading}
-            className="btn-primary"
-          >
-            <Upload className="mr-2 size-4" />
-            {isUploading ? "Uploading..." : "Upload Data"}
-          </Button>
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="size-5 text-primary" />
+            Data Analysis Results
+          </CardTitle>
+          <CardDescription className="mt-1">
+            Processed data sources and insights
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -111,7 +92,7 @@ export function DataAnalysisPanel() {
         ) : dataSources.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             <Database className="size-12 mx-auto mb-4 opacity-50" />
-            <p>No data sources found. Upload data to get started.</p>
+            <p>No processed data sources yet. Upload and analyze files to see results here.</p>
           </div>
         ) : (
           <div className="space-y-4">

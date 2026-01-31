@@ -3,6 +3,7 @@
 import { Navigation } from "@/components/navigation"
 import { IntelligentDashboard } from "@/components/intelligent-dashboard"
 import { DataAnalysisPanel } from "@/components/data-analysis-panel"
+import { UploadedDocumentsPanel } from "@/components/uploaded-documents-panel"
 import { PredictionsPanel } from "@/components/predictions-panel"
 import { ActionsPanel } from "@/components/actions-panel"
 import { Footer } from "@/components/footer"
@@ -27,7 +28,11 @@ export default function DashboardPage() {
             <IntelligentDashboard />
             
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              <UploadedDocumentsPanel />
               <DataAnalysisPanel />
+            </div>
+            
+            <div className="mt-8">
               <PredictionsPanel />
             </div>
             
