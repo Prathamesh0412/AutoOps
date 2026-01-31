@@ -122,30 +122,11 @@ const buildActionPreview = (action: DbAction): PendingAction => {
 }
 
 export function ActionExecutionPanel() {
-<<<<<<< HEAD
-  const { 
-    actions, 
-    insights, 
-    executeAction, 
-    rejectAction, 
-    isLoading 
-  } = useDataStore()
-  
-  const pendingActions = actions.filter(action => action.status === 'pending')
-  const [selectedAction, setSelectedAction] = useState<Action | undefined>(
-    pendingActions.length > 0 ? pendingActions[0] : actions.length > 0 ? actions[0] : undefined
-  )
-  const [editedContent, setEditedContent] = useState(selectedAction?.generated_content || '')
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null)
-  const [mounted, setMounted] = useState(false)
-=======
   const { toast } = useToast()
   const [pendingActions, setPendingActions] = useState<PendingAction[]>(FALLBACK_ACTIONS)
   const [selectedActionId, setSelectedActionId] = useState<string>(FALLBACK_ACTIONS[0]?.id ?? "")
   const [editedContent, setEditedContent] = useState<string>(FALLBACK_ACTIONS[0]?.generatedContent ?? "")
   const [isSubmitting, setIsSubmitting] = useState(false)
->>>>>>> 80ec6df8c4d2966d2babb82223dbd6dee80486c6
 
   useEffect(() => {
     let isMounted = true
@@ -182,23 +163,6 @@ export function ActionExecutionPanel() {
   }, [])
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Update selectedAction when actions change
-    if (!selectedAction && pendingActions.length > 0) {
-      setSelectedAction(pendingActions[0])
-      setEditedContent(pendingActions[0].generated_content || '')
-    } else if (selectedAction && !actions.find(a => a.id === selectedAction.id)) {
-      // Current selected action was removed, select a new one
-      const newSelected = pendingActions.length > 0 ? pendingActions[0] : actions.length > 0 ? actions[0] : undefined
-      setSelectedAction(newSelected)
-      setEditedContent(newSelected?.generated_content || '')
-    }
-  }, [actions, pendingActions, selectedAction])
-
-  const handleActionSelect = (action: Action) => {
-    setSelectedAction(action)
-    setEditedContent(action.generated_content || '')
-=======
     if (!pendingActions.length) return
     if (!pendingActions.some((action) => action.id === selectedActionId)) {
       const next = pendingActions[0]
@@ -214,7 +178,6 @@ export function ActionExecutionPanel() {
     if (!action) return
     setSelectedActionId(action.id)
     setEditedContent(action.generatedContent)
->>>>>>> 80ec6df8c4d2966d2babb82223dbd6dee80486c6
   }
 
   const mutateAction = async (status: "completed" | "on_hold", successMessage: string) => {
@@ -247,45 +210,11 @@ export function ActionExecutionPanel() {
   }
 
   const handleSaveDraft = () => {
-<<<<<<< HEAD
-    // Update the action message in store
-    if (selectedAction) {
-      // Note: In a real system, this would persist to backend
-      console.log('Draft saved:', editedContent)
-    }
-  }
-
-  const executeActionHandler = async () => {
-    try {
-      if (pendingAction === 'approve' && selectedAction) {
-        await executeAction(selectedAction.id, editedContent)
-        toast({ 
-          message: `Action "${selectedAction?.title || 'this action'}" executed successfully`, 
-          type: "success" 
-        })
-      } else if (pendingAction === 'reject' && selectedAction) {
-        rejectAction(selectedAction.id)
-        toast({ 
-          message: `Action "${selectedAction?.title || 'this action'}" rejected`, 
-          type: "info" 
-        })
-      }
-      
-      setShowConfirmDialog(false)
-      setPendingAction(null)
-    } catch (error) {
-      toast({ 
-        message: "Failed to execute action. Please try again.", 
-        type: "error" 
-      })
-    }
-=======
     if (!selectedAction) return
     setPendingActions((prev) =>
       prev.map((action) => (action.id === selectedAction.id ? { ...action, generatedContent: editedContent } : action))
     )
     toast({ title: "Draft saved", description: "Your edits are stored locally for review." })
->>>>>>> 80ec6df8c4d2966d2babb82223dbd6dee80486c6
   }
 
   return (
@@ -342,30 +271,10 @@ export function ActionExecutionPanel() {
                   </div>
                 </div>
 
-<<<<<<< HEAD
-                  <div className="grid grid-cols-3 gap-4 rounded-lg border bg-card p-4">
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">AI Confidence</p>
-                      <p className="mt-1 text-lg font-bold text-primary">{selectedAction.confidence}%</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Expected Impact</p>
-                      <p className="mt-1 text-lg font-bold text-accent">₹{selectedAction?.expected_impact?.toLocaleString() || 0}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Status</p>
-                      <Badge className={`mt-1 ${
-                        selectedAction.priority === 'High' ? 'status-high' : 'status-medium'
-                      }`}>
-                        Pending
-                      </Badge>
-                    </div>
-=======
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-lg border bg-background/60 p-4 text-center">
                     <p className="text-xs text-muted-foreground">AI Confidence</p>
                     <p className="text-2xl font-semibold text-primary">{selectedAction.aiConfidence}%</p>
->>>>>>> 80ec6df8c4d2966d2babb82223dbd6dee80486c6
                   </div>
                   <div className="rounded-lg border bg-background/60 p-4 text-center">
                     <p className="text-xs text-muted-foreground">Estimated Impact</p>
@@ -377,22 +286,6 @@ export function ActionExecutionPanel() {
                   </div>
                 </div>
 
-<<<<<<< HEAD
-    <ConfirmationDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        title={pendingAction === 'approve' ? 'Approve & Execute Action' : 'Reject Action'}
-        description={
-          pendingAction === 'approve'
-            ? `Are you sure you want to execute "${selectedAction?.title || 'this action'}"? This action will be processed immediately.`
-            : `Are you sure you want to reject "${selectedAction?.title || 'this action'}"? This action will be removed from the pending list.`
-        }
-        confirmText={pendingAction === 'approve' ? 'Execute' : 'Reject'}
-        onConfirm={executeActionHandler}
-        isLoading={isLoading}
-      />
-  </div>
-=======
                 <div className="space-y-2">
                   <Label htmlFor="action-content">Review & Edit</Label>
                   <Textarea
@@ -433,6 +326,5 @@ export function ActionExecutionPanel() {
         </CardContent>
       </Card>
     </div>
->>>>>>> 80ec6df8c4d2966d2babb82223dbd6dee80486c6
   )
 }
