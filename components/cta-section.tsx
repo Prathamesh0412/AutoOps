@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Zap, ChevronRight, CheckCircle2 } from "lucide-react"
+import Link from "next/link"
 import { NoSSR } from "@/components/no-ssr"
 
 export function CTASection() {
@@ -42,12 +43,16 @@ export function CTASection() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="group">
-                    Start Free Trial
-                    <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <Button size="lg" className="group" asChild>
+                    <Link href="/dashboard">
+                      Start Free Trial
+                      <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </Button>
-                  <Button variant="outline" size="lg">
-                    Schedule Demo
+                  <Button variant="outline" size="lg" asChild>
+                    <Link href="/dashboard">
+                      Schedule Demo
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -76,8 +81,10 @@ export function CTASection() {
                     </div>
                     
                     <div className="space-y-3">
-                      <Button className="w-full" size="lg">
-                        Get Started Now
+                      <Button className="w-full" size="lg" asChild>
+                        <Link href="/dashboard">
+                          Get Started Now
+                        </Link>
                       </Button>
                       <p className="text-xs text-muted-foreground">
                         No setup required • Start automating in minutes

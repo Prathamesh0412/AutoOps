@@ -4,6 +4,7 @@ import { Navigation } from "@/components/navigation"
 import { WorkflowsHeader } from "@/components/workflows-header"
 import { WorkflowsGrid } from "@/components/workflows-grid"
 import { WorkflowStats } from "@/components/workflow-stats"
+import { Footer } from "@/components/footer"
 import { NoSSR } from "@/components/no-ssr"
 
 export default function WorkflowsPage() {
@@ -22,6 +23,7 @@ export default function WorkflowsPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </NoSSR>
   )

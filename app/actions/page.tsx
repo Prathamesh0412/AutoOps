@@ -5,6 +5,7 @@ import { ActionsHeader } from "@/components/actions-header"
 import { ActionsPanel } from "@/components/actions-panel"
 import { ActionExecutionPanel } from "@/components/action-execution-panel"
 import { ActionHistoryPanel } from "@/components/action-history-panel"
+import { Footer } from "@/components/footer"
 import { NoSSR } from "@/components/no-ssr"
 
 export default function ActionsPage() {
@@ -25,6 +26,7 @@ export default function ActionsPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </NoSSR>
   )

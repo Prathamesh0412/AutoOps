@@ -93,8 +93,32 @@ export function ActionsPanel() {
           setExecutedActions(executed.slice(0, 4))
         }
       }
+      
+      alert('Action executed successfully!')
     } catch (error) {
       console.error('[v0] Error approving action:', error)
+      alert('Failed to execute action')
+    }
+  }
+
+  const handleHold = async (id: string) => {
+    try {
+      const response = await fetch('/api/actions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'on_hold' }),
+      })
+
+      if (!response.ok) {
+        console.error('[v0] Error holding action:', response.status)
+        return
+      }
+
+      setPendingActions(prev => prev.filter(a => a.id !== id))
+      alert('Action put on hold')
+    } catch (error) {
+      console.error('[v0] Error holding action:', error)
+      alert('Failed to hold action')
     }
   }
 
@@ -216,7 +240,7 @@ export function ActionsPanel() {
                           Impact: {action.expected_impact}
                         </span>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleHold(action.id)}>
                             <X className="mr-2 size-4" />
                             Hold
                           </Button>

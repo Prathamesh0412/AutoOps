@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Zap, TrendingUp, Shield, Cpu, ChevronRight, BarChart3, Target, Clock } from "lucide-react"
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { NoSSR } from "@/components/no-ssr"
 
@@ -37,12 +38,16 @@ export function HomeHero() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="group">
-                  Get Started
-                  <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <Button size="lg" className="group" asChild>
+                  <Link href="/dashboard">
+                    Get Started
+                    <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </Button>
-                <Button variant="outline" size="lg">
-                  View Demo
+                <Button variant="outline" size="lg" asChild>
+                  <Link href="/dashboard">
+                    View Demo
+                  </Link>
                 </Button>
               </div>
 

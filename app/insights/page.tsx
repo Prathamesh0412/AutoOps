@@ -4,6 +4,7 @@ import { Navigation } from "@/components/navigation"
 import { InsightsHeader } from "@/components/insights-header"
 import { AlertsGrid } from "@/components/alerts-grid"
 import { PredictionDetailsCard } from "@/components/prediction-details-card"
+import { Footer } from "@/components/footer"
 import { NoSSR } from "@/components/no-ssr"
 
 export default function InsightsPage() {
@@ -24,6 +25,7 @@ export default function InsightsPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </NoSSR>
   )

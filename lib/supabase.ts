@@ -49,6 +49,7 @@ export type Workflow = {
   success_rate: number
   last_execution: string | null
   total_executions: number
+  is_executing?: boolean
   created_at: string
 }
 

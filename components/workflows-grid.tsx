@@ -89,6 +89,37 @@ export function WorkflowsGrid() {
     }
   }
 
+  const executeWorkflow = async (id: string) => {
+    try {
+      // Show loading state
+      setWorkflows(prev => 
+        prev.map(w => w.id === id ? { ...w, is_executing: true } : w)
+      )
+      
+      // Simulate workflow execution
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Update workflow with execution results
+      setWorkflows(prev => 
+        prev.map(w => w.id === id ? { 
+          ...w, 
+          is_executing: false,
+          last_execution: new Date().toISOString(),
+          total_executions: w.total_executions + 1
+        } : w)
+      )
+      
+      alert(`Workflow executed successfully!`)
+    } catch (error) {
+      console.error('[v0] Error executing workflow:', error)
+      alert('Failed to execute workflow')
+      // Reset loading state on error
+      setWorkflows(prev => 
+        prev.map(w => w.id === id ? { ...w, is_executing: false } : w)
+      )
+    }
+  }
+
   if (loading) {
     return (
       <div className="py-12 text-center text-muted-foreground">
@@ -197,12 +228,17 @@ export function WorkflowsGrid() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => alert('Configuration settings coming soon!')}>
                         <Settings className="mr-2 size-4" />
                         Configure
                       </Button>
-                      <Button size="sm" disabled={!isActive}>
-                        {isActive ? (
+                      <Button size="sm" disabled={!isActive || workflow.is_executing} onClick={() => isActive && executeWorkflow(workflow.id)}>
+                        {workflow.is_executing ? (
+                          <>
+                            <div className="mr-2 size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            Executing...
+                          </>
+                        ) : isActive ? (
                           <>
                             <Play className="mr-2 size-4" />
                             Run Now

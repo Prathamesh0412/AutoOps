@@ -5,6 +5,7 @@ import { DashboardOverview } from "@/components/dashboard-overview"
 import { DataAnalysisPanel } from "@/components/data-analysis-panel"
 import { PredictionsPanel } from "@/components/predictions-panel"
 import { ActionsPanel } from "@/components/actions-panel"
+import { Footer } from "@/components/footer"
 import { NoSSR } from "@/components/no-ssr"
 
 export default function DashboardPage() {
@@ -35,6 +36,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </NoSSR>
   )
