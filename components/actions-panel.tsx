@@ -4,122 +4,63 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail, AlertCircle } from "lucide-react"
 import { useState, useEffect } from "react"
-import type { Action } from "@/lib/supabase"
+import { useActions, useAppStore, useIsProcessing } from "@/lib/store"
+import type { Action } from "@/lib/store"
 
 const iconMap: Record<string, any> = {
-  retention_offer: MessageSquare,
-  purchase_order: ShoppingCart,
-  lead_prioritization: Target,
+  email_campaign: MessageSquare,
+  inventory: ShoppingCart,
+  lead_scoring: Target,
   report_generation: FileText,
-  email_campaign: Mail,
   pricing_adjustment: TrendingUp,
 }
 
 export function ActionsPanel() {
-  const [activeTab, setActiveTab] = useState("executed")
-  const [executedActions, setExecutedActions] = useState<Action[]>([])
-  const [pendingActions, setPendingActions] = useState<Action[]>([])
-  const [loading, setLoading] = useState(true)
+  const actions = useActions()
+  const { approveAction, holdAction, updateActionMessage } = useAppStore()
+  const isProcessing = useIsProcessing()
+  const [activeTab, setActiveTab] = useState("pending")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingMessage, setEditingMessage] = useState("")
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    async function fetchActions() {
-      try {
-        const [executedRes, pendingRes] = await Promise.all([
-          fetch('/api/actions?status=executed'),
-          fetch('/api/actions?status=pending'),
-        ])
-
-        if (!executedRes.ok || !pendingRes.ok) {
-          console.error('[v0] API error:', executedRes.status, pendingRes.status)
-          setExecutedActions([])
-          setPendingActions([])
-          setLoading(false)
-          return
-        }
-
-        const executed = await executedRes.json()
-        const pending = await pendingRes.json()
-
-        console.log('[v0] Executed actions:', executed)
-        console.log('[v0] Pending actions:', pending)
-
-        if (Array.isArray(executed)) {
-          setExecutedActions(executed.slice(0, 4))
-        } else {
-          console.error('[v0] Executed is not an array:', executed)
-          setExecutedActions([])
-        }
-
-        if (Array.isArray(pending)) {
-          setPendingActions(pending.slice(0, 2))
-        } else {
-          console.error('[v0] Pending is not an array:', pending)
-          setPendingActions([])
-        }
-      } catch (error) {
-        console.error('[v0] Error fetching actions:', error)
-        setExecutedActions([])
-        setPendingActions([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchActions()
-    const interval = setInterval(fetchActions, 10000)
-    return () => clearInterval(interval)
+    setMounted(true)
   }, [])
 
+  // Filter actions by status
+  const executedActions = actions.filter(action => action.status === 'executed').slice(0, 4)
+  const pendingActions = actions.filter(action => action.status === 'pending')
+
   const handleApprove = async (id: string) => {
-    try {
-      const response = await fetch('/api/actions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'executed' }),
-      })
-
-      if (!response.ok) {
-        console.error('[v0] Error approving action:', response.status)
-        return
-      }
-
-      setPendingActions(prev => prev.filter(a => a.id !== id))
-      const executedResponse = await fetch(`/api/actions?status=executed`)
-      if (executedResponse.ok) {
-        const executed = await executedResponse.json()
-        if (Array.isArray(executed)) {
-          setExecutedActions(executed.slice(0, 4))
-        }
-      }
-      
-      alert('Action executed successfully!')
-    } catch (error) {
-      console.error('[v0] Error approving action:', error)
-      alert('Failed to execute action')
-    }
+    await approveAction(id)
+    // Show success feedback
+    alert('Action executed successfully!')
   }
 
   const handleHold = async (id: string) => {
-    try {
-      const response = await fetch('/api/actions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'on_hold' }),
-      })
+    await holdAction(id)
+    // Show feedback
+    alert('Action put on hold')
+  }
 
-      if (!response.ok) {
-        console.error('[v0] Error holding action:', response.status)
-        return
-      }
+  const startEditing = (action: Action) => {
+    setEditingId(action.id)
+    setEditingMessage(action.message || '')
+  }
 
-      setPendingActions(prev => prev.filter(a => a.id !== id))
-      alert('Action put on hold')
-    } catch (error) {
-      console.error('[v0] Error holding action:', error)
-      alert('Failed to hold action')
-    }
+  const saveMessage = (id: string) => {
+    updateActionMessage(id, editingMessage)
+    setEditingId(null)
+    setEditingMessage("")
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setEditingMessage("")
   }
 
   return (
@@ -157,7 +98,7 @@ export function ActionsPanel() {
           </TabsList>
 
           <TabsContent value="executed" className="mt-4 space-y-3">
-            {loading ? (
+            {!mounted ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 Loading actions...
               </div>
@@ -203,7 +144,7 @@ export function ActionsPanel() {
           </TabsContent>
 
           <TabsContent value="pending" className="mt-4 space-y-3">
-            {loading ? (
+            {!mounted ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 Loading pending actions...
               </div>
@@ -235,16 +176,76 @@ export function ActionsPanel() {
                           {action.priority}
                         </Badge>
                       </div>
+                      
+                      {/* Message editing section */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Message Preview:
+                          </span>
+                          {editingId !== action.id && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => startEditing(action)}
+                              className="text-xs h-6"
+                            >
+                              Edit
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {editingId === action.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingMessage}
+                              onChange={(e) => setEditingMessage(e.target.value)}
+                              className="min-h-[80px] text-sm"
+                              placeholder="Enter custom message..."
+                            />
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => saveMessage(action.id)}
+                                disabled={isProcessing}
+                              >
+                                Save
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={cancelEditing}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                            {action.message || 'Default message will be sent...'}
+                          </div>
+                        )}
+                      </div>
+                      
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           Impact: {action.expected_impact}
                         </span>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleHold(action.id)}>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleHold(action.id)}
+                            disabled={isProcessing}
+                          >
                             <X className="mr-2 size-4" />
                             Hold
                           </Button>
-                          <Button size="sm" onClick={() => handleApprove(action.id)}>
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleApprove(action.id)}
+                            disabled={isProcessing}
+                          >
                             <Play className="mr-2 size-4" />
                             Approve & Execute
                           </Button>

@@ -6,14 +6,25 @@ import { Badge } from "@/components/ui/badge"
 import { Zap, TrendingUp, Shield, Cpu, ChevronRight, BarChart3, Target, Clock } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { useMetrics, useAppStore } from "@/lib/store"
+import { AnimatedCounter } from "@/components/ui/animated-counter"
 import { NoSSR } from "@/components/no-ssr"
 
 export function HomeHero() {
+  const metrics = useMetrics()
+  const { updateMetrics } = useAppStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    
+    // Update metrics every 5 seconds for live feel
+    const interval = setInterval(() => {
+      updateMetrics()
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [updateMetrics])
 
   return (
     <NoSSR>
@@ -53,15 +64,21 @@ export function HomeHero() {
 
               <div className="grid grid-cols-3 gap-6 pt-8">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">94%</div>
+                  <div className="text-3xl font-bold text-primary">
+                    <AnimatedCounter value={metrics.accuracyRate} suffix="%" />
+                  </div>
                   <div className="text-sm text-muted-foreground">Accuracy Rate</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">124h</div>
+                  <div className="text-3xl font-bold text-primary">
+                    <AnimatedCounter value={metrics.timeSaved} suffix="h" />
+                  </div>
                   <div className="text-sm text-muted-foreground">Time Saved Weekly</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">2.5x</div>
+                  <div className="text-3xl font-bold text-primary">
+                    <AnimatedCounter value={metrics.productivityBoost * 10} suffix="x" />
+                  </div>
                   <div className="text-sm text-muted-foreground">Productivity Boost</div>
                 </div>
               </div>
@@ -86,38 +103,54 @@ export function HomeHero() {
                             <TrendingUp className="h-4 w-4 text-green-500" />
                             <span className="text-sm font-medium">Active Workflows</span>
                           </div>
-                          <div className="text-2xl font-bold">12</div>
+                          <div className="text-2xl font-bold">
+                            <AnimatedCounter value={metrics.activeWorkflows} />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Target className="h-4 w-4 text-blue-500" />
                             <span className="text-sm font-medium">Predictions</span>
                           </div>
-                          <div className="text-2xl font-bold">247</div>
+                          <div className="text-2xl font-bold">
+                            <AnimatedCounter value={metrics.predictionsGenerated} />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Cpu className="h-4 w-4 text-purple-500" />
                             <span className="text-sm font-medium">Actions Executed</span>
                           </div>
-                          <div className="text-2xl font-bold">89</div>
+                          <div className="text-2xl font-bold">
+                            <AnimatedCounter value={metrics.totalActions} />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-orange-500" />
                             <span className="text-sm font-medium">Time Saved</span>
                           </div>
-                          <div className="text-2xl font-bold">124h</div>
+                          <div className="text-2xl font-bold">
+                            <AnimatedCounter value={metrics.timeSaved} suffix="h" />
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">System Health</span>
-                          <span className="text-green-500 font-medium">Optimal</span>
+                          <span className="text-green-500 font-medium">
+                            {metrics.systemHealth >= 90 ? 'Optimal' : metrics.systemHealth >= 70 ? 'Good' : 'Warning'}
+                          </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              metrics.systemHealth >= 90 ? 'bg-green-500' :
+                              metrics.systemHealth >= 70 ? 'bg-amber-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${metrics.systemHealth}%` }}
+                          ></div>
                         </div>
                       </div>
                     </div>

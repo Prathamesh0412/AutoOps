@@ -1,57 +1,48 @@
 "use client"
 
+import { MetricCard } from "@/components/ui/metric-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Zap, Target, Clock } from "lucide-react"
+import { TrendingUp, Zap, Target, Clock, Activity, BarChart3, Users } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useAppStore, useMetrics, useIsProcessing } from "@/lib/store"
+import { useRouter } from "next/navigation"
 import { NoSSR } from "@/components/no-ssr"
 
-interface Metrics {
-  activeWorkflows: number
-  predictionsMade: number
-  actionsExecuted: number
-  timeSaved: number
-}
-
 export function DashboardOverview() {
-  const [metrics, setMetrics] = useState<Metrics>({
-    activeWorkflows: 0,
-    predictionsMade: 0,
-    actionsExecuted: 0,
-    timeSaved: 0,
-  })
-  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const metrics = useMetrics()
+  const isProcessing = useIsProcessing()
+  const { updateMetrics } = useAppStore()
   const [mounted, setMounted] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
   useEffect(() => {
     setMounted(true)
-    async function fetchMetrics() {
-      try {
-        const response = await fetch('/api/metrics')
-        if (!response.ok) {
-          console.error('[v0] API error:', response.status)
-          return
-        }
-        const data = await response.json()
-        console.log('[v0] Metrics received:', data)
-        if (data && typeof data === 'object') {
-          setMetrics(data)
-        } else {
-          console.error('[v0] Invalid metrics data:', data)
-        }
-      } catch (error) {
-        console.error('[v0] Error fetching metrics:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    
+    const interval = setInterval(() => {
+      updateMetrics()
+      setLastUpdated(new Date())
+    }, 5000)
 
-    if (mounted) {
-      fetchMetrics()
-      const interval = setInterval(fetchMetrics, 30000) // Refresh every 30 seconds
-      return () => clearInterval(interval)
+    return () => clearInterval(interval)
+  }, [updateMetrics])
+
+  const handleMetricClick = (metricType: string) => {
+    switch (metricType) {
+      case 'workflows':
+        router.push('/workflows')
+        break
+      case 'predictions':
+        router.push('/insights')
+        break
+      case 'actions':
+        router.push('/actions')
+        break
+      default:
+        break
     }
-  }, [mounted])
+  }
 
   const metricCards = [
     {
@@ -59,73 +50,111 @@ export function DashboardOverview() {
       value: metrics.activeWorkflows,
       icon: Zap,
       description: "AI agents running",
+      trend: 'up' as const,
+      trendValue: 12,
     },
     {
-      title: "Predictions Made",
-      value: metrics.predictionsMade,
-      icon: Zap,
-      description: "Last 7 days",
+      title: "Predictions Generated",
+      value: metrics.predictionsGenerated,
+      icon: BarChart3,
+      description: "AI insights created",
+      trend: 'up' as const,
+      trendValue: 8,
     },
     {
       title: "Actions Executed",
-      value: metrics.actionsExecuted,
+      value: metrics.totalActions,
       icon: Target,
-      description: "Automated tasks",
+      description: "Automated tasks completed",
+      trend: 'up' as const,
+      trendValue: 15,
     },
     {
       title: "Time Saved",
       value: metrics.timeSaved,
       icon: Clock,
-      description: "Hours saved",
-    },
+      description: "Hours saved this week",
+      suffix: "h",
+      trend: 'up' as const,
+      trendValue: 24,
+    }
   ]
 
   return (
     <NoSSR fallback={
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="relative overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-              <div className="h-4 w-4 bg-muted animate-pulse rounded" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 w-16 bg-muted animate-pulse rounded mb-2" />
-              <div className="h-3 w-20 bg-muted animate-pulse rounded" />
-            </CardContent>
-          </Card>
+          <div key={i} className="h-24 bg-muted animate-pulse rounded" />
         ))}
       </div>
     }>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {metricCards.map((metric) => (
-          <Card key={metric.title} className="relative overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="flex items-center gap-2">
-                <metric.icon className="size-4 text-muted-foreground" />
-                <p className="text-sm font-medium text-muted-foreground">
-                  {metric.title}
-                </p>
+      <div className="space-y-6">
+        {/* Last updated indicator */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">System Overview</h2>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className={`w-2 h-2 rounded-full ${isProcessing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {metricCards.map((metric, index) => (
+            <MetricCard
+              key={index}
+              title={metric.title}
+              value={metric.value}
+              suffix={metric.suffix}
+              description={metric.description}
+              trend={metric.trend}
+              trendValue={metric.trendValue}
+              icon={metric.icon}
+              onClick={() => handleMetricClick(metric.title.toLowerCase().includes('workflow') ? 'workflows' : 
+                                          metric.title.toLowerCase().includes('prediction') ? 'predictions' : 
+                                          metric.title.toLowerCase().includes('action') ? 'actions' : '')}
+              loading={!mounted}
+            />
+          ))}
+        </div>
+
+        {/* System Health Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              System Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Overall Health</span>
+                <span className="text-sm text-muted-foreground">{Math.round(metrics.systemHealth)}%</span>
               </div>
-              <Badge
-                variant="default"
-                className="flex items-center gap-1"
-              >
-                <TrendingUp className="size-3" />
-                Live
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loading ? "..." : metric.value}
+              <div className="w-full bg-muted rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${metrics.systemHealth}%` }}
+                />
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {metric.description}
-              </p>
-            </CardContent>
-            <div className="absolute -right-4 -top-4 size-24 rounded-full bg-primary/5" />
-          </Card>
-        ))}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-green-500">{metrics.accuracyRate}%</div>
+                  <div className="text-xs text-muted-foreground">Accuracy</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-blue-500">{metrics.productivityBoost}x</div>
+                  <div className="text-xs text-muted-foreground">Productivity</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-purple-500">Live</div>
+                  <div className="text-xs text-muted-foreground">Status</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </NoSSR>
   )
