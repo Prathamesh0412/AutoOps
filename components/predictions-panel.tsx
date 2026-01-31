@@ -4,11 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock, Target, AlertCircle } from "lucide-react"
+import { Zap, AlertTriangle, TrendingDown, Package, Users, ChevronRight, DollarSign, Clock, Target, AlertCircle, FileText } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useDataStore } from "@/lib/core/data-store"
+import { useDataAnalysisStore } from "@/lib/data-analysis-store"
 import type { Prediction } from "@/lib/store"
+import type { Insight } from "@/lib/core/data-models"
 import Link from "next/link"
+
+// Unified type for both Insights and Predictions
+type UnifiedPrediction = (Prediction | (Insight & {
+  name: string
+  prediction_type: Insight['type']
+  impact: string
+  recommendation: string
+  source_file_id?: undefined
+  source_file_name?: undefined
+}))
 
 const iconMap: Record<string, any> = {
   churn_risk: TrendingDown,
@@ -27,6 +39,7 @@ const severityColors = {
 
 export function PredictionsPanel() {
   const { insights, generateInsights } = useDataStore()
+  const { uploadedFiles } = useDataAnalysisStore()
   const [filter, setFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -35,9 +48,26 @@ export function PredictionsPanel() {
     setMounted(true)
   }, [])
 
-  // Filter insights based on severity (using confidence as proxy for severity)
-  const filteredInsights = insights.filter(insight => {
-    const confidence = insight.confidence
+  // Check if any files have been analyzed
+  const hasAnalyzedFiles = uploadedFiles.some(file => file.status === 'completed')
+  const hasUploadedFiles = uploadedFiles.length > 0
+  
+  // Combine insights with file-based predictions
+  const allPredictions: UnifiedPrediction[] = [
+    ...insights.map(insight => ({
+      ...insight,
+      name: insight.title,
+      prediction_type: insight.type,
+      impact: `₹${insight.business_impact.toLocaleString()}`,
+      recommendation: insight.reason_breakdown.join(', '),
+      source_file_id: undefined,
+      source_file_name: undefined
+    }))
+  ]
+  
+  // Filter predictions based on severity
+  const filteredPredictions = allPredictions.filter((prediction: UnifiedPrediction) => {
+    const confidence = prediction.confidence
     let severity: 'High' | 'Medium' | 'Low'
     if (confidence >= 80) severity = 'High'
     else if (confidence >= 60) severity = 'Medium'
@@ -47,12 +77,12 @@ export function PredictionsPanel() {
   }).slice(0, 6)
 
   // Calculate confidence score programmatically
-  const calculateConfidence = (insight: any): number => {
+  const calculateConfidence = (prediction: UnifiedPrediction): number => {
     // Apply decay factor to confidence over time
-    const ageInHours = (Date.now() - new Date(insight.created_at).getTime()) / (1000 * 60 * 60)
+    const ageInHours = (Date.now() - new Date(prediction.created_at).getTime()) / (1000 * 60 * 60)
     const ageDecay = Math.max(0.7, 1 - (ageInHours / 168)) // Decay over a week
     
-    return Math.min(99, Math.round(insight.confidence * ageDecay * insight.decay_factor))
+    return Math.min(99, Math.round(prediction.confidence * ageDecay * (prediction.decay_factor || 1)))
   }
 
   const toggleExpanded = (id: string) => {
@@ -63,9 +93,20 @@ export function PredictionsPanel() {
     generateInsights()
   }
 
-  const avgConfidence = insights.length > 0
-    ? Math.round(insights.reduce((sum, insight) => sum + calculateConfidence(insight), 0) / insights.length)
+  const avgConfidence = allPredictions.length > 0
+    ? Math.round(allPredictions.reduce((sum, prediction) => sum + calculateConfidence(prediction), 0) / allPredictions.length)
     : 0
+
+  // Determine what message to show
+  const getEmptyStateMessage = () => {
+    if (!hasUploadedFiles) {
+      return "Upload and analyze a file to generate AI predictions."
+    } else if (!hasAnalyzedFiles) {
+      return "File uploaded. Click 'Analyze' to generate AI predictions."
+    } else {
+      return "File analyzed. No significant patterns detected."
+    }
+  }
 
   return (
     <Card className="col-span-1">
@@ -82,7 +123,7 @@ export function PredictionsPanel() {
           </div>
           <Badge variant="outline" className="bg-primary/5">
             <AlertTriangle className="mr-1 size-3" />
-            {insights.length} Active
+            {allPredictions.length} Active
           </Badge>
         </div>
       </CardHeader>
@@ -91,9 +132,9 @@ export function PredictionsPanel() {
           <div className="py-8 text-center text-sm text-muted-foreground">
             Analyzing data...
           </div>
-        ) : filteredInsights.length === 0 ? (
+        ) : filteredPredictions.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
-            No active predictions. System is monitoring data.
+            {getEmptyStateMessage()}
           </div>
         ) : (
           <div className="space-y-4">
@@ -106,10 +147,10 @@ export function PredictionsPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All ({insights.length})</SelectItem>
-                    <SelectItem value="High">High ({insights.filter(i => i.confidence >= 80).length})</SelectItem>
-                    <SelectItem value="Medium">Medium ({insights.filter(i => i.confidence >= 60 && i.confidence < 80).length})</SelectItem>
-                    <SelectItem value="Low">Low ({insights.filter(i => i.confidence < 60).length})</SelectItem>
+                    <SelectItem value="All">All ({allPredictions.length})</SelectItem>
+                    <SelectItem value="High">High ({allPredictions.filter(p => p.confidence >= 80).length})</SelectItem>
+                    <SelectItem value="Medium">Medium ({allPredictions.filter(p => p.confidence >= 60 && p.confidence < 80).length})</SelectItem>
+                    <SelectItem value="Low">Low ({allPredictions.filter(p => p.confidence < 60).length})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -123,23 +164,23 @@ export function PredictionsPanel() {
               </Button>
             </div>
 
-            {/* Insights list */}
-            {filteredInsights.map((insight) => {
-              const Icon = iconMap[insight.type] || Zap
-              const calculatedConfidence = calculateConfidence(insight)
-              const isExpanded = expandedId === insight.id
+            {/* Predictions list */}
+            {filteredPredictions.map((prediction: UnifiedPrediction) => {
+              const Icon = iconMap[prediction.prediction_type] || Zap
+              const calculatedConfidence = calculateConfidence(prediction)
+              const isExpanded = expandedId === prediction.id
               
               return (
                 <div
-                  key={insight.id}
+                  key={prediction.id}
                   className={`rounded-lg border p-4 transition-all duration-200 cursor-pointer ${
-                    insight.confidence >= 80 ? severityColors.High : 
-                    insight.confidence >= 60 ? severityColors.Medium : 
+                    prediction.confidence >= 80 ? severityColors.High : 
+                    prediction.confidence >= 60 ? severityColors.Medium : 
                     severityColors.Low
                   } ${
                     isExpanded ? 'ring-2 ring-primary/20 shadow-md' : 'shadow-sm hover:shadow-md'
                   }`}
-                  onClick={() => toggleExpanded(insight.id)}
+                  onClick={() => toggleExpanded(prediction.id)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/50">
@@ -148,39 +189,45 @@ export function PredictionsPanel() {
                     <div className="flex-1 space-y-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{insight.title}</h4>
+                          <h4 className="font-semibold">{prediction.name}</h4>
                           <Badge variant="outline" className="text-xs">
                             {calculatedConfidence}% confident
                           </Badge>
                         </div>
                         <p className="mt-1 text-sm opacity-90">
-                          {insight.description}
+                          {prediction.description}
                         </p>
+                        {prediction.source_file_name && (
+                          <p className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                            <FileText className="size-3" />
+                            Source: {prediction.source_file_name}
+                          </p>
+                        )}
                       </div>
                       
                       {/* Expandable details */}
                       <div className={`overflow-hidden transition-all duration-300 ${
                         isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}>
-                        {insight.reason_breakdown && (
-                          <div className="mt-3 p-3 bg-background/50 rounded-lg animate-fade-in">
-                            <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                              <AlertTriangle className="size-4" />
-                              Why this insight exists
-                            </h5>
-                            <p className="text-xs text-muted-foreground leading-relaxed">{insight.reason_breakdown.join(', ')}</p>
-                            <div className="mt-3 p-2 bg-muted/50 rounded border-l-2 border-primary/30">
-                              <p className="text-xs font-medium text-primary">Business Impact</p>
-                              <p className="text-xs text-muted-foreground mt-1">₹{insight.business_impact.toLocaleString()}</p>
-                            </div>
+                        <div className="mt-3 p-3 bg-background/50 rounded-lg animate-fade-in">
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <AlertTriangle className="size-4" />
+                            Why this prediction exists
+                          </h5>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {prediction.recommendation}
+                          </p>
+                          <div className="mt-3 p-2 bg-muted/50 rounded border-l-2 border-primary/30">
+                            <p className="text-xs font-medium text-primary">Business Impact</p>
+                            <p className="text-xs text-muted-foreground mt-1">{prediction.impact}</p>
                           </div>
-                        )}
+                        </div>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="size-3" />
-                          {new Date(insight.created_at).toLocaleDateString()}
+                          {new Date(prediction.created_at).toLocaleDateString()}
                         </span>
                         <div className="flex gap-2">
                           <Button 
@@ -188,7 +235,7 @@ export function PredictionsPanel() {
                             variant="outline" 
                             onClick={(e) => {
                               e.stopPropagation()
-                              toggleExpanded(insight.id)
+                              toggleExpanded(prediction.id)
                             }}
                             className="gap-1 btn-ghost"
                           >

@@ -15,7 +15,10 @@ import {
   AlertTriangle,
   BarChart3,
   ShoppingCart,
-  Zap
+  Zap,
+  Eye,
+  BarChart,
+  LineChart
 } from "lucide-react"
 import { useDataStore } from "@/lib/core/data-store"
 import { IntelligenceEngine } from "@/lib/core/intelligence-engine"
@@ -31,10 +34,63 @@ export function ProductIntelligenceDashboard() {
   
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '90d'>('30d')
   const [mounted, setMounted] = useState(false)
+  const [showVisualCharts, setShowVisualCharts] = useState(true)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Mini chart components for product visualization
+  const ProductSparkline = ({ data, color = "#3b82f6" }: { data: number[], color?: string }) => {
+    const max = Math.max(...data)
+    const min = Math.min(...data)
+    const range = max - min || 1
+    
+    return (
+      <div className="h-12 flex items-end gap-0.5">
+        {data.map((value, index) => (
+          <div
+            key={index}
+            className="flex-1 rounded-t-sm"
+            style={{
+              height: `${((value - min) / range) * 100}%`,
+              backgroundColor: color,
+              opacity: 0.6 + (index / data.length) * 0.4,
+              minHeight: '1px'
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  const DemandInventoryChart = ({ product }: { product: any }) => {
+    // Generate simulated demand vs inventory data
+    const demandData = Array.from({ length: 14 }, (_, i) => 
+      Math.max(5, product.metrics.weeklyDemand + Math.sin(i / 2) * 10 + Math.random() * 5)
+    )
+    const inventoryData = Array.from({ length: 14 }, (_, i) => 
+      Math.max(5, product.stock_quantity - (i * 2) + Math.random() * 3)
+    )
+    
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <h6 className="text-xs font-medium text-blue-600">Demand Trend</h6>
+            <ProductSparkline data={demandData} color="#3b82f6" />
+          </div>
+          <div>
+            <h6 className="text-xs font-medium text-green-600">Inventory Level</h6>
+            <ProductSparkline data={inventoryData} color="#10b981" />
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Stockout in {Math.max(1, Math.round(product.stock_quantity / product.metrics.weeklyDemand))} weeks
+        </div>
+      </div>
+    )
+  }
 
   // Calculate product metrics
   const getProductMetrics = (product: any) => {
@@ -63,25 +119,28 @@ export function ProductIntelligenceDashboard() {
 
   // Sort products by different metrics
   const mostBoughtProducts = [...products]
-    .map(product => ({
+    .map((product, index) => ({
       ...product,
-      metrics: getProductMetrics(product)
+      metrics: getProductMetrics(product),
+      uniqueKey: `${product.id}_${index}` // Ensure unique key
     }))
     .sort((a, b) => b.metrics.totalSold - a.metrics.totalSold)
     .slice(0, 5)
 
   const mostDemandedProducts = [...products]
-    .map(product => ({
+    .map((product, index) => ({
       ...product,
-      metrics: getProductMetrics(product)
+      metrics: getProductMetrics(product),
+      uniqueKey: `${product.id}_${index}` // Ensure unique key
     }))
     .sort((a, b) => b.metrics.weeklyDemand - a.metrics.weeklyDemand)
     .slice(0, 5)
 
   const mostProfitableProducts = [...products]
-    .map(product => ({
+    .map((product, index) => ({
       ...product,
-      metrics: getProductMetrics(product)
+      metrics: getProductMetrics(product),
+      uniqueKey: `${product.id}_${index}` // Ensure unique key
     }))
     .sort((a, b) => b.metrics.totalProfit - a.metrics.totalProfit)
     .slice(0, 5)
@@ -146,26 +205,36 @@ export function ProductIntelligenceDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight text-balance">
-          Product Intelligence
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground text-pretty">
-          AI-driven product performance analysis and recommendations
-        </p>
-      </div>
-
-      {/* Time Filter */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Time Period:</span>
-        <Tabs value={timeFilter} onValueChange={(value: any) => setTimeFilter(value)}>
-          <TabsList>
-            <TabsTrigger value="7d">7 Days</TabsTrigger>
-            <TabsTrigger value="30d">30 Days</TabsTrigger>
-            <TabsTrigger value="90d">90 Days</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Header with Visual Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="size-6 text-primary" />
+            Product Intelligence
+          </h2>
+          <p className="text-muted-foreground">
+            Real-time product analytics and AI-powered recommendations
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Eye className="size-4" />
+            <Button
+              variant={showVisualCharts ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowVisualCharts(!showVisualCharts)}
+            >
+              {showVisualCharts ? "Charts ON" : "Charts OFF"}
+            </Button>
+          </div>
+          <Tabs value={timeFilter} onValueChange={(value) => setTimeFilter(value as any)}>
+            <TabsList>
+              <TabsTrigger value="7d">7D</TabsTrigger>
+              <TabsTrigger value="30d">30D</TabsTrigger>
+              <TabsTrigger value="90d">90D</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* Main Dashboard */}
@@ -184,7 +253,7 @@ export function ProductIntelligenceDashboard() {
           <CardContent>
             <div className="space-y-4">
               {mostBoughtProducts.map((product, index) => (
-                <div key={product.id} className="flex items-center justify-between">
+                <div key={product.uniqueKey} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-sm font-medium">
                       {index + 1}
@@ -223,7 +292,7 @@ export function ProductIntelligenceDashboard() {
           <CardContent>
             <div className="space-y-4">
               {mostDemandedProducts.map((product, index) => (
-                <div key={product.id} className="space-y-2">
+                <div key={product.uniqueKey} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-sm font-medium">
@@ -250,16 +319,11 @@ export function ProductIntelligenceDashboard() {
                       )}
                     </Badge>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span>Stock: {product.stock_quantity} units</span>
-                      <span>{Math.round(product.metrics.stockWeeks)} weeks left</span>
-                    </div>
-                    <Progress 
-                      value={Math.min(100, product.metrics.stockWeeks * 25)} 
-                      className="h-2"
-                    />
-                  </div>
+                  
+                  {/* Visual Demand vs Inventory Chart */}
+                  {showVisualCharts && (
+                    <DemandInventoryChart product={product} />
+                  )}
                 </div>
               ))}
             </div>
@@ -280,7 +344,7 @@ export function ProductIntelligenceDashboard() {
           <CardContent>
             <div className="space-y-4">
               {mostProfitableProducts.map((product, index) => (
-                <div key={product.id} className="flex items-center justify-between">
+                <div key={product.uniqueKey} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-green-500/10 text-sm font-medium">
                       {index + 1}
@@ -319,10 +383,10 @@ export function ProductIntelligenceDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {products.slice(0, 6).map(product => {
+            {products.slice(0, 6).map((product, productIndex) => {
               const recommendations = generateProductRecommendations(product)
               return recommendations.map((rec, recIndex) => (
-                <div key={`${product.id}-${recIndex}`} className="rounded-lg border p-4 space-y-3">
+                <div key={`${product.id}_${productIndex}-${recIndex}`} className="rounded-lg border p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="font-medium">{rec.title}</h4>

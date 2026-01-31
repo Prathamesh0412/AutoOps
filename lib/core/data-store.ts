@@ -467,8 +467,9 @@ export const useDataStore = create<DataStore>()(
 
     // Product actions
     addProduct: (product) => {
+      const uniqueId = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       set(state => ({
-        products: [...state.products, { ...product, id: `prod_${Date.now()}` }]
+        products: [...state.products, { ...product, id: product.id || uniqueId }]
       }))
       get().generateInsights()
     },
@@ -484,8 +485,9 @@ export const useDataStore = create<DataStore>()(
 
     // Order actions
     addOrder: (order) => {
+      const uniqueId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       set(state => ({
-        orders: [...state.orders, { ...order, id: `order_${Date.now()}` }]
+        orders: [...state.orders, { ...order, id: order.id || uniqueId }]
       }))
       get().generateInsights()
       get().updateMetrics()
@@ -633,7 +635,7 @@ export const useDataStore = create<DataStore>()(
           const randomCustomer = customers[Math.floor(Math.random() * customers.length)]
           const randomProduct = products[Math.floor(Math.random() * products.length)]
           get().addOrder({
-            id: `order_${Date.now()}`,
+            id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             customer_id: randomCustomer.id,
             product_id: randomProduct.id,
             quantity: Math.floor(Math.random() * 3) + 1,

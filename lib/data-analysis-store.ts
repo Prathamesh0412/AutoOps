@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useAppStore } from './store'
 
 export interface UploadedFile {
   id: string
@@ -143,6 +144,10 @@ export const useDataAnalysisStore = create<DataAnalysisStore>()(
       },
 
       removeFile: (id: string) => {
+        // Remove predictions associated with this file
+        const appStore = useAppStore.getState()
+        appStore.removePredictionsFromFile(id)
+        
         set(state => ({
           uploadedFiles: state.uploadedFiles.filter(file => file.id !== id)
         }))
@@ -239,6 +244,22 @@ export const useDataAnalysisStore = create<DataAnalysisStore>()(
               : file
           )
         }))
+
+        // Generate predictions if analysis was successful
+        if (success) {
+          const { uploadedFiles } = get()
+          const file = uploadedFiles.find(f => f.id === fileId)
+          
+          if (file) {
+            const appStore = useAppStore.getState()
+            appStore.generatePredictionFromFile(
+              fileId,
+              file.name,
+              file.type,
+              file.recordsProcessed
+            )
+          }
+        }
       },
 
       addDataSourceFromFile: (fileId: string) => {
