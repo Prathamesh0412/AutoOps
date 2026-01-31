@@ -63,6 +63,7 @@ The app uses 6 main tables:
 - `GET /api/workflows` - All workflows
 - `PATCH /api/workflows` - Toggle workflow active state
 - `GET /api/workflows/stats` - Workflow statistics
+- `POST /api/feedback/email` - Categorize feedback, craft an email, and send it via SMTP
 
 ## Key Features
 
@@ -101,3 +102,28 @@ The app is ready to run! All database tables are created and populated with samp
 4. Frontend components fetch real data
 
 Simply preview the app to see it in action!
+
+## Automated Customer Email System
+
+AutoOps now includes a sentiment-aware customer success assistant:
+
+1. `POST /api/feedback/email` receives live customer feedback.
+2. VADER sentiment analysis scores the note and classifies the customer as Happy, Passive, or At-Risk.
+3. A response email is generated with a Hugging Face model when an API key is available (rule-based templates act as a fallback).
+4. The platform sends the message over SMTP (or logs the payload in demo mode) and returns both the sentiment object and generated email text.
+
+### Environment Variables
+
+Create `.env.local` with the SMTP creds you plan to use (Gmail, Outlook, Mailgun, etc.) and an optional Hugging Face key:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_inbox@example.com
+SMTP_PASS=app_password
+SMTP_FROM=Customer Success <your_inbox@example.com>
+HUGGINGFACE_API_KEY=hf_xxx            # optional
+HUGGINGFACE_MODEL=mistralai/Mistral-7B-Instruct-v0.2
+```
+
+If `HUGGINGFACE_API_KEY` is not provided the system still works using curated business-safe templates, so demos never block on LLM access.
