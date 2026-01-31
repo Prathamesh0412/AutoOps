@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail, AlertCircle } from "lucide-react"
+import { Target, CheckCircle2, Clock, Play, X, MessageSquare, FileText, ShoppingCart, TrendingUp, Mail } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useActions, useAppStore, useIsProcessing } from "@/lib/store"
 import type { Action } from "@/lib/store"
@@ -16,6 +16,7 @@ const iconMap: Record<string, any> = {
   lead_scoring: Target,
   report_generation: FileText,
   pricing_adjustment: TrendingUp,
+  customer_email: Mail,
 }
 
 export function ActionsPanel() {
@@ -36,38 +37,9 @@ export function ActionsPanel() {
   const pendingActions = actions.filter(action => action.status === 'pending')
 
   const handleApprove = async (id: string) => {
-<<<<<<< HEAD
-    try {
-      const response = await fetch('/api/actions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'executed' }),
-      })
-
-      if (!response.ok) {
-        console.error('[v0] Error approving action:', response.status)
-        return
-      }
-
-      setPendingActions(prev => prev.filter(a => a.id !== id))
-      const executedResponse = await fetch(`/api/actions?status=executed`)
-      if (executedResponse.ok) {
-        const executed = await executedResponse.json()
-        if (Array.isArray(executed)) {
-          setExecutedActions(executed.slice(0, 4))
-        }
-      }
-      
-      alert('Action executed successfully!')
-    } catch (error) {
-      console.error('[v0] Error approving action:', error)
-      alert('Failed to execute action')
-    }
-=======
     await approveAction(id)
     // Show success feedback
     alert('Action executed successfully!')
->>>>>>> d6bcbf367480caa7ff139afea510027b0cb5f53a
   }
 
   const handleHold = async (id: string) => {
